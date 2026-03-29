@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manager Fashion - Social Media Video</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #111;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+  color: #fff;
+}
+
+.player-wrapper {
+  position: relative;
+  width: 360px;
+  height: 640px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  border: 2px solid #222;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* SCENES */
+.scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.scene.active { opacity: 1; }
+
+/* INTRO */
+.scene-intro {
+  background: radial-gradient(ellipse at 50% 40%, #1A1A2E 0%, #0A0A0A 70%);
+}
+
+.logo-group {
+  text-align: center;
+  transform: scale(0);
+  animation: none;
+}
+
+.scene-intro.active .logo-group {
+  animation: springIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.logo-manager {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 30px;
+  font-weight: 900;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: -1px;
+  line-height: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.logo-manager .shimmer {
+  position: absolute;
+  top: 0;
+  left: -60px;
+  width: 40px;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, #C9A84C66, transparent);
+  animation: none;
+}
+
+.scene-intro.active .logo-manager .shimmer {
+  animation: shimmer 3s linear infinite;
+}
+
+.logo-fashion {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 30px;
+  font-weight: 900;
+  color: #C9A84C;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.logo-line {
+  width: 0;
+  height: 2px;
+  background: #C9A84C;
+  margin: 12px auto;
+  border-radius: 2px;
+}
+
+.scene-intro.active .logo-line {
+  animation: lineExpand 1s 0.5s ease-out forwards;
+}
+
+.logo-tagline {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: #8A8A8A;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.scene-intro.active .logo-tagline {
+  animation: fadeUp 0.6s 0.8s ease-out forwards;
+}
+
+/* Particles */
+.particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #C9A84C;
+  opacity: 0;
+}
+
+.scene-intro.active .particle {
+  animation: particleOrbit 6s linear infinite;
+}
+
+/* FEATURES */
+.scene-features {
+  background: linear-gradient(180deg, #0A0A0A 0%, #1A1A2E 100%);
+  padding: 20px;
+}
+
+.features-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 25px;
+  opacity: 0;
+  transform: translateY(-15px);
+}
+
+.scene-features.active .features-title {
+  animation: fadeUp 0.5s ease-out forwards;
+}
+
+.features-title span { color: #C9A84C; }
+
+.feature-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(201,168,76,0.12);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.scene-features.active .feature-card {
+  animation: cardIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.scene-features.active .feature-card:nth-child(2) { animation-delay: 0.15s; }
+.scene-features.active .feature-card:nth-child(3) { animation-delay: 0.30s; }
+.scene-features.active .feature-card:nth-child(4) { animation-delay: 0.45s; }
+.scene-features.active .feature-card:nth-child(5) { animation-delay: 0.60s; }
+
+.feature-icon { font-size: 22px; flex-shrink: 0; }
+
+.feature-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #C9A84C;
+}
+
+.feature-desc {
+  font-size: 9px;
+  color: #8A8A8A;
+  margin-top: 2px;
+}
+
+.bg-circle {
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+  border: 1px solid rgba(201,168,76,0.08);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.scene-features.active .bg-circle {
+  animation: slowRotate 20s linear infinite;
+}
+
+/* SOCIAL PROOF */
+.scene-proof {
+  background: radial-gradient(circle at 50% 30%, rgba(201,168,76,0.08) 0%, #0A0A0A 60%);
+  padding: 20px;
+}
+
+.proof-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 30px;
+  opacity: 0;
+}
+
+.scene-proof.active .proof-title {
+  animation: fadeUp 0.5s ease-out forwards;
+}
+
+.proof-title span { color: #C9A84C; }
+
+.stat {
+  text-align: center;
+  margin-bottom: 25px;
+  opacity: 0;
+  transform: scale(0.5);
+}
+
+.scene-proof.active .stat {
+  animation: cardIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.scene-proof.active .stat:nth-child(2) { animation-delay: 0.2s; }
+.scene-proof.active .stat:nth-child(3) { animation-delay: 0.4s; }
+.scene-proof.active .stat:nth-child(4) { animation-delay: 0.6s; }
+
+.stat-value {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 48px;
+  font-weight: 900;
+  color: #C9A84C;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #8A8A8A;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-top: 4px;
+}
+
+.proof-ring {
+  position: absolute;
+  width: 350px;
+  height: 350px;
+  border-radius: 50%;
+  border: 1px solid rgba(201,168,76,0.06);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.scene-proof.active .proof-ring {
+  animation: slowRotate 15s linear infinite;
+}
+
+/* CTA */
+.scene-cta {
+  background: radial-gradient(ellipse at 50% 50%, #1A1A2E 0%, #0A0A0A 80%);
+}
+
+.cta-group {
+  text-align: center;
+  transform: scale(0);
+}
+
+.scene-cta.active .cta-group {
+  animation: springIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.cta-badge {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: #0A0A0A;
+  background: #C9A84C;
+  padding: 6px 18px;
+  border-radius: 30px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  display: inline-block;
+  margin-bottom: 15px;
+}
+
+.cta-text {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.cta-text span { color: #C9A84C; }
+
+.cta-button {
+  margin-top: 25px;
+  opacity: 0;
+  transform: translateY(15px);
+}
+
+.scene-cta.active .cta-button {
+  animation: fadeUp 0.5s 0.5s ease-out forwards;
+}
+
+.cta-btn {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: #C9A84C;
+  padding: 12px 30px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  box-shadow: 0 6px 30px rgba(201,168,76,0.3);
+  display: inline-block;
+}
+
+.scene-cta.active .cta-btn {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.cta-url {
+  font-size: 12px;
+  font-weight: 500;
+  color: #8A8A8A;
+  margin-top: 20px;
+  opacity: 0;
+}
+
+.scene-cta.active .cta-url {
+  animation: fadeUp 0.5s 0.8s ease-out forwards;
+}
+
+.cta-glow {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.scene-cta.active .cta-glow {
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+/* CAPTIONS */
+.caption-bar {
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%) scale(0);
+  white-space: nowrap;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.caption-bar.visible {
+  animation: captionIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.caption-bar.hiding {
+  animation: captionOut 0.15s ease-in forwards;
+}
+
+.caption-text {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(10,10,10,0.8);
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: 1px solid rgba(201,168,76,0.25);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  backdrop-filter: blur(10px);
+}
+
+/* CONTROLS */
+.controls {
+  margin-top: 20px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.btn {
+  background: #C9A84C;
+  color: #0A0A0A;
+  border: none;
+  padding: 10px 28px;
+  border-radius: 8px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn:hover { background: #E8D48B; }
+
+.btn-secondary {
+  background: transparent;
+  color: #8A8A8A;
+  border: 1px solid #333;
+}
+
+.btn-secondary:hover { border-color: #C9A84C; color: #C9A84C; }
+
+.progress-bar {
+  width: 360px;
+  height: 3px;
+  background: #222;
+  border-radius: 2px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #C9A84C;
+  width: 0%;
+  transition: width 0.1s linear;
+}
+
+.time-display {
+  font-size: 12px;
+  color: #8A8A8A;
+  margin-top: 6px;
+  font-family: 'Inter', sans-serif;
+}
+
+/* KEYFRAMES */
+@keyframes springIn {
+  0% { transform: scale(0); }
+  60% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { left: -60px; }
+  40% { left: 200px; }
+  100% { left: 200px; }
+}
+
+@keyframes lineExpand {
+  to { width: 120px; }
+}
+
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cardIn {
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slowRotate {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes captionIn {
+  0% { transform: translateX(-50%) scale(0); opacity: 0; }
+  60% { transform: translateX(-50%) scale(1.05); opacity: 1; }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+@keyframes captionOut {
+  to { transform: translateX(-50%) scale(0.9); opacity: 0; }
+}
+
+@keyframes particleOrbit {
+  0% { opacity: 0.2; transform: rotate(0deg) translateX(100px) rotate(0deg); }
+  50% { opacity: 0.5; }
+  100% { opacity: 0.2; transform: rotate(360deg) translateX(100px) rotate(-360deg); }
+}
+</style>
+</head>
+<body>
+
+<div class="player-wrapper">
+  <div class="canvas">
+    <!-- SCENE 1: INTRO -->
+    <div class="scene scene-intro active" id="scene-intro">
+      <div class="particles">
+        <div class="particle" style="top:50%;left:50%;animation-delay:0s"></div>
+        <div class="particle" style="top:50%;left:50%;animation-delay:0.5s"></div>
+        <div class="particle" style="top:50%;left:50%;animation-delay:1s"></div>
+        <div class="particle" style="top:50%;left:50%;animation-delay:1.5s"></div>
+        <div class="particle" style="top:50%;left:50%;animation-delay:2s"></div>
+        <div class="particle" style="top:50%;left:50%;animation-delay:2.5s"></div>
+      </div>
+      <div class="logo-group">
+        <div class="logo-manager">MANAGER<div class="shimmer"></div></div>
+        <div class="logo-fashion">FASHION</div>
+        <div class="logo-line"></div>
+        <div class="logo-tagline">Booking \u00b7 Casting \u00b7 CRM \u00b7 Website</div>
+      </div>
+    </div>
+
+    <!-- SCENE 2: FEATURES -->
+    <div class="scene scene-features" id="scene-features">
+      <div class="bg-circle"></div>
+      <div class="features-title">Tudo que sua<br><span>ag\u00eancia precisa</span></div>
+      <div class="feature-card">
+        <div class="feature-icon">\ud83d\udccb</div>
+        <div><div class="feature-title">Booking</div><div class="feature-desc">Gerencie jobs e agendamentos</div></div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">\ud83c\udfac</div>
+        <div><div class="feature-title">Casting</div><div class="feature-desc">Castings e callbacks intuitivos</div></div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">\ud83d\udc65</div>
+        <div><div class="feature-title">CRM</div><div class="feature-desc">Relacionamento com clientes</div></div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">\ud83c\udf10</div>
+        <div><div class="feature-title">Website</div><div class="feature-desc">Site moderno e autom\u00e1tico</div></div>
+      </div>
+    </div>
+
+    <!-- SCENE 3: SOCIAL PROOF -->
+    <div class="scene scene-proof" id="scene-proof">
+      <div class="proof-ring"></div>
+      <div class="proof-title">Confian\u00e7a <span>global</span></div>
+      <div class="stat"><div class="stat-value">200+</div><div class="stat-label">Ag\u00eancias</div></div>
+      <div class="stat"><div class="stat-value">30+</div><div class="stat-label">Pa\u00edses</div></div>
+      <div class="stat"><div class="stat-value">3</div><div class="stat-label">Idiomas</div></div>
+    </div>
+
+    <!-- SCENE 4: CTA -->
+    <div class="scene scene-cta" id="scene-cta">
+      <div class="cta-glow"></div>
+      <div class="cta-group">
+        <div class="cta-badge">7 dias gr\u00e1tis</div>
+        <div class="cta-text">Teste <span>agora</span><br>sem compromisso</div>
+      </div>
+      <div class="cta-button"><div class="cta-btn">Come\u00e7ar agora \u2192</div></div>
+      <div class="cta-url">managerfashion.com</div>
+    </div>
+
+    <!-- CAPTIONS -->
+    <div class="caption-bar" id="caption-bar">
+      <div class="caption-text" id="caption-text"></div>
+    </div>
+  </div>
+</div>
+
+<div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+<div class="time-display" id="time-display">0:00 / 0:18</div>
+
+<div class="controls">
+  <button class="btn" id="play-btn" onclick="togglePlay()">\u25b6 Play</button>
+  <button class="btn btn-secondary" onclick="restart()">\u21ba Replay</button>
+</div>
+
+<script>
+const TOTAL_DURATION = 18000;
+const FPS = 30;
+const TOTAL_FRAMES = 540;
+
+const scenes = [
+  { id: 'scene-intro',    startFrame: 0,   endFrame: 160 },
+  { id: 'scene-features', startFrame: 145, endFrame: 300 },
+  { id: 'scene-proof',    startFrame: 285, endFrame: 415 },
+  { id: 'scene-cta',      startFrame: 400, endFrame: 540 },
+];
+
+const captions = [
+  { text: 'Sua ag\u00eancia',        startFrame: 0,   endFrame: 30  },
+  { text: 'merece o melhor',    startFrame: 30,  endFrame: 60  },
+  { text: 'sistema de gest\u00e3o',  startFrame: 60,  endFrame: 95  },
+  { text: 'Manager Fashion',    startFrame: 100, endFrame: 160 },
+  { text: 'Booking',            startFrame: 170, endFrame: 200 },
+  { text: 'Casting',            startFrame: 200, endFrame: 230 },
+  { text: 'CRM',                startFrame: 230, endFrame: 260 },
+  { text: 'Website',            startFrame: 260, endFrame: 290 },
+  { text: '+200 ag\u00eancias',      startFrame: 300, endFrame: 345 },
+  { text: '+30 pa\u00edses',         startFrame: 345, endFrame: 385 },
+  { text: 'confiam no MF',      startFrame: 385, endFrame: 420 },
+  { text: 'Teste gr\u00e1tis',       startFrame: 430, endFrame: 470 },
+  { text: 'por 7 dias',         startFrame: 470, endFrame: 510 },
+  { text: 'managerfashion.com', startFrame: 510, endFrame: 540 },
+];
+
+let playing = false;
+let startTime = null;
+let elapsed = 0;
+let animFrame = null;
+let lastCaption = null;
+
+function togglePlay() {
+  if (playing) pause();
+  else play();
+}
+
+function play() {
+  playing = true;
+  document.getElementById('play-btn').textContent = '\u23f8 Pause';
+  startTime = performance.now() - elapsed;
+  tick();
+}
+
+function pause() {
+  playing = false;
+  document.getElementById('play-btn').textContent = '\u25b6 Play';
+  if (animFrame) cancelAnimationFrame(animFrame);
+}
+
+function restart() {
+  pause();
+  elapsed = 0;
+  lastCaption = null;
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+  const bar = document.getElementById('caption-bar');
+  bar.classList.remove('visible', 'hiding');
+  document.getElementById('progress-fill').style.width = '0%';
+  document.getElementById('time-display').textContent = '0:00 / 0:18';
+  setTimeout(() => play(), 100);
+}
+
+function tick() {
+  if (!playing) return;
+
+  elapsed = performance.now() - startTime;
+  if (elapsed >= TOTAL_DURATION) {
+    elapsed = TOTAL_DURATION;
+    updateFrame(TOTAL_FRAMES);
+    pause();
+    return;
+  }
+
+  const frame = Math.floor((elapsed / TOTAL_DURATION) * TOTAL_FRAMES);
+  updateFrame(frame);
+  animFrame = requestAnimationFrame(tick);
+}
+
+function updateFrame(frame) {
+  const pct = (frame / TOTAL_FRAMES) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+
+  const secs = Math.floor(frame / FPS);
+  document.getElementById('time-display').textContent =
+    `0:${String(secs).padStart(2,'0')} / 0:18`;
+
+  scenes.forEach(s => {
+    const el = document.getElementById(s.id);
+    if (frame >= s.startFrame && frame <= s.endFrame) {
+      if (!el.classList.contains('active')) {
+        el.classList.add('active');
+      }
+    } else {
+      el.classList.remove('active');
+    }
+  });
+
+  const caption = captions.find(c => frame >= c.startFrame && frame <= c.endFrame);
+  const bar = document.getElementById('caption-bar');
+  const textEl = document.getElementById('caption-text');
+
+  if (caption) {
+    if (lastCaption !== caption.text) {
+      bar.classList.remove('hiding', 'visible');
+      void bar.offsetWidth;
+      textEl.textContent = caption.text;
+      bar.classList.add('visible');
+      lastCaption = caption.text;
+    }
+  } else {
+    if (lastCaption !== null) {
+      bar.classList.remove('visible');
+      bar.classList.add('hiding');
+      lastCaption = null;
+    }
+  }
+}
+</script>
+
+</body>
+</html>
