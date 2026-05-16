@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Swing-Trade Crypto Signals</title>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --bg-2: #131a23;
+    --bg-3: #1b242f;
+    --line: #283340;
+    --fg: #e6edf3;
+    --fg-dim: #8b96a3;
+    --green: #3fb950;
+    --green-dim: #1f6f33;
+    --red: #f85149;
+    --red-dim: #7a2a26;
+    --yellow: #d29922;
+    --blue: #4493f8;
+    --purple: #a371f7;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px; }
+  a { color: var(--blue); text-decoration: none; }
+  header {
+    padding: 16px 20px; border-bottom: 1px solid var(--line);
+    display: flex; flex-wrap: wrap; align-items: center; gap: 16px;
+    background: var(--bg-2); position: sticky; top: 0; z-index: 10;
+  }
+  header h1 { font-size: 16px; margin: 0; font-weight: 600; }
+  header .sub { color: var(--fg-dim); font-size: 12px; }
+  .pill {
+    background: var(--bg-3); border: 1px solid var(--line);
+    padding: 4px 10px; border-radius: 999px; font-size: 12px;
+    cursor: pointer; user-select: none; color: var(--fg);
+  }
+  .pill.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .pill:hover:not(.active) { border-color: var(--fg-dim); }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-left: auto; }
+  input.add {
+    background: var(--bg-3); border: 1px solid var(--line); color: var(--fg);
+    padding: 6px 10px; border-radius: 6px; font-size: 13px; width: 180px;
+  }
+  button.primary {
+    background: var(--blue); border: 0; color: #fff; padding: 6px 12px;
+    border-radius: 6px; font-size: 13px; cursor: pointer;
+  }
+  button.primary:hover { background: #2f7fd6; }
+  .section-title {
+    padding: 14px 20px 6px; font-size: 12px; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--fg-dim);
+  }
+  table {
+    width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums;
+  }
+  th, td {
+    padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  th { font-weight: 600; color: var(--fg-dim); font-size: 11px;
+       text-transform: uppercase; letter-spacing: 0.05em;
+       background: var(--bg-2); position: sticky; top: 57px; cursor: pointer; }
+  th:hover { color: var(--fg); }
+  th.sort-asc::after { content: " ▲"; color: var(--blue); }
+  th.sort-desc::after { content: " ▼"; color: var(--blue); }
+  td.coin, th.coin { text-align: left; }
+  tr.row:hover { background: var(--bg-2); }
+  tr.row { cursor: pointer; }
+  td.coin { display: flex; align-items: center; gap: 10px; min-width: 200px; }
+  td.coin img { width: 22px; height: 22px; border-radius: 50%; }
+  .sym { color: var(--fg-dim); font-size: 11px; text-transform: uppercase; }
+  .pos { color: var(--green); }
+  .neg { color: var(--red); }
+  .verdict { padding: 3px 8px; border-radius: 4px; font-size: 11px;
+             font-weight: 600; letter-spacing: 0.04em; }
+  .v-strong-buy  { background: var(--green); color: #06120a; }
+  .v-buy         { background: var(--green-dim); color: #b6f0c5; }
+  .v-neutral     { background: var(--bg-3); color: var(--fg-dim); }
+  .v-sell        { background: var(--red-dim); color: #f8b7b4; }
+  .v-strong-sell { background: var(--red); color: #1a0606; }
+  .spark { width: 80px; height: 24px; vertical-align: middle; }
+  td.remove { width: 28px; padding: 0 6px; }
+  td.remove button {
+    background: transparent; border: 0; color: var(--fg-dim);
+    cursor: pointer; font-size: 14px;
+  }
+  td.remove button:hover { color: var(--red); }
+  .why-row td {
+    background: var(--bg-2); padding: 14px 20px; text-align: left;
+    border-bottom: 1px solid var(--line);
+  }
+  .why-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px 32px;
+  }
+  .why-grid ul { margin: 4px 0; padding-left: 18px; }
+  .why-grid li { margin: 2px 0; color: var(--fg-dim); }
+  .why-grid li b { color: var(--fg); }
+  .badge { font-size: 10px; padding: 2px 6px; border-radius: 3px;
+           background: var(--bg-3); border: 1px solid var(--line); color: var(--fg-dim); }
+  .empty { padding: 30px 20px; color: var(--fg-dim); text-align: center; }
+  .toast {
+    position: fixed; bottom: 20px; right: 20px; background: var(--bg-3);
+    border: 1px solid var(--line); padding: 10px 14px; border-radius: 6px;
+    font-size: 12px; opacity: 0; transition: opacity 0.2s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  footer { padding: 20px; color: var(--fg-dim); font-size: 11px; text-align: center; }
+  @media (max-width: 700px) {
+    th, td { padding: 8px 6px; font-size: 12px; }
+    th.hide-sm, td.hide-sm { display: none; }
+    header { padding: 12px; }
+    input.add { width: 120px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Swing-Trade Crypto Signals</h1>
+    <div class="sub" id="status">Loading…</div>
+  </div>
+  <div class="controls">
+    <span class="pill active" data-filter="all">All</span>
+    <span class="pill" data-filter="long">Long setups</span>
+    <span class="pill" data-filter="short">Short setups</span>
+    <span class="pill" data-filter="neutral">Neutral</span>
+    <input id="addInput" class="add" placeholder="Add coin (e.g. sui, near)" />
+    <button id="addBtn" class="primary">Add to watchlist</button>
+    <span class="pill" id="refreshBtn" title="Refresh now">↻ Refresh</span>
+    <span class="pill" id="autoBtn">Auto: ON</span>
+  </div>
+</header>
+
+<div class="section-title">Your watchlist <span id="wlCount" class="badge">0</span></div>
+<table id="wlTable">
+  <thead><tr id="wlHead"></tr></thead>
+  <tbody id="wlBody"><tr><td class="empty" colspan="20">Add coins above to track them here.</td></tr></tbody>
+</table>
+
+<div class="section-title">Top 25 by market cap</div>
+<table id="topTable">
+  <thead><tr id="topHead"></tr></thead>
+  <tbody id="topBody"><tr><td class="empty" colspan="20">Loading…</td></tr></tbody>
+</table>
+
+<footer>
+  Data: CoinGecko public API. Signals computed locally in your browser from the last 90 daily closes.
+  This is decision-support, not financial advice — verify before trading.
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+// ─── Config ────────────────────────────────────────────────────────────────
+const CG = "https://api.coingecko.com/api/v3";
+const REFRESH_MS = 60_000;
+const WL_KEY = "swing.watchlist.v1";
+
+const COLUMNS = [
+  { id: "rank",     label: "#",        align: "right", get: r => r.market_cap_rank ?? "" },
+  { id: "name",     label: "Coin",     align: "left",  get: r => r.name },
+  { id: "price",    label: "Price",    align: "right", get: r => r.current_price, fmt: fmtPrice },
+  { id: "ch24",     label: "24h",      align: "right", get: r => r.price_change_percentage_24h_in_currency, fmt: fmtPct, color: true },
+  { id: "ch7d",     label: "7d",       align: "right", get: r => r.price_change_percentage_7d_in_currency, fmt: fmtPct, color: true, hideSm: true },
+  { id: "ch30d",    label: "30d",      align: "right", get: r => r.price_change_percentage_30d_in_currency, fmt: fmtPct, color: true, hideSm: true },
+  { id: "rsi",      label: "RSI(14)",  align: "right", get: r => r.ta?.rsi, fmt: fmtRsi, hideSm: true },
+  { id: "trend",    label: "Trend",    align: "right", get: r => r.ta?.trend, fmt: fmtTrend, hideSm: true },
+  { id: "bb",       label: "Bollinger",align: "right", get: r => r.ta?.bbPos, fmt: fmtBb, hideSm: true },
+  { id: "atr",      label: "ATR%",     align: "right", get: r => r.ta?.atrPct, fmt: fmtPct1, hideSm: true },
+  { id: "verdict",  label: "Verdict",  align: "right", get: r => r.ta?.verdict, fmt: fmtVerdict },
+  { id: "spark",    label: "7d",       align: "right", get: r => r.sparkline_in_7d?.price, fmt: fmtSpark, hideSm: true },
+];
+
+// ─── State ─────────────────────────────────────────────────────────────────
+let topRows = [];
+let watchRows = [];
+let watchlist = loadWatchlist();
+let filter = "all";
+let sort = { col: "rank", dir: "asc" };
+let auto = true;
+let autoTimer = null;
+let expanded = new Set();
+
+// ─── Boot ──────────────────────────────────────────────────────────────────
+buildHeads();
+wireControls();
+refreshAll();
+startAuto();
+
+// ─── Fetch ─────────────────────────────────────────────────────────────────
+async function refreshAll() {
+  setStatus("Loading market data…");
+  try {
+    const [top, wl] = await Promise.all([
+      fetchMarkets({ per_page: 25, page: 1 }),
+      watchlist.length ? fetchMarkets({ ids: watchlist.join(",") }) : Promise.resolve([]),
+    ]);
+    topRows = top;
+    watchRows = wl;
+    // Hydrate TA for everything currently in view (sequential to respect rate limit).
+    await hydrateTA([...topRows, ...watchRows.filter(r => !topRows.find(t => t.id === r.id))]);
+    render();
+    setStatus(`Updated ${new Date().toLocaleTimeString()} · top ${topRows.length} + ${watchRows.length} watchlist`);
+  } catch (e) {
+    console.error(e);
+    setStatus("Error: " + e.message);
+  }
+}
+
+async function fetchMarkets(extra) {
+  const params = new URLSearchParams({
+    vs_currency: "usd",
+    order: "market_cap_desc",
+    sparkline: "true",
+    price_change_percentage: "24h,7d,30d",
+    ...extra,
+  });
+  const r = await fetch(`${CG}/coins/markets?${params}`);
+  if (!r.ok) throw new Error(`markets ${r.status}`);
+  return r.json();
+}
+
+async function fetchChart(id) {
+  const params = new URLSearchParams({
+    vs_currency: "usd", days: "90", interval: "daily",
+  });
+  const r = await fetch(`${CG}/coins/${encodeURIComponent(id)}/market_chart?${params}`);
+  if (!r.ok) throw new Error(`chart ${id} ${r.status}`);
+  return r.json();
+}
+
+async function searchCoin(query) {
+  const r = await fetch(`${CG}/search?query=${encodeURIComponent(query)}`);
+  if (!r.ok) throw new Error(`search ${r.status}`);
+  const j = await r.json();
+  return j.coins?.[0] ?? null;
+}
+
+const taCache = new Map(); // id -> ta object (in-memory only)
+
+async function hydrateTA(rows) {
+  for (const row of rows) {
+    if (row.ta) continue;
+    if (taCache.has(row.id)) { row.ta = taCache.get(row.id); continue; }
+    try {
+      const chart = await fetchChart(row.id);
+      const closes = chart.prices.map(p => p[1]);
+      const ta = computeTA(closes, row);
+      taCache.set(row.id, ta);
+      row.ta = ta;
+      render(); // progressive render as each row is ready
+    } catch (e) {
+      console.warn("TA failed for", row.id, e.message);
+      row.ta = { verdict: "neutral", evidence: [`No history available (${e.message})`], score: 0 };
+    }
+    await sleep(900); // throttle for CoinGecko free tier
+  }
+}
+
+// ─── Technical analysis ────────────────────────────────────────────────────
+function computeTA(closes, row) {
+  const n = closes.length;
+  const last = closes[n - 1];
+
+  const rsi  = rsi14(closes);
+  const sma20 = sma(closes, 20);
+  const sma50 = sma(closes, 50);
+  const bb   = bollinger(closes, 20, 2);
+  const atrPct = atr14Pct(closes);
+
+  const trend = (sma20 && sma50)
+    ? (sma20 > sma50 * 1.01 ? "up" : sma20 < sma50 * 0.99 ? "down" : "flat")
+    : "flat";
+
+  let bbPos = "mid";
+  if (bb) {
+    if (last <= bb.lower) bbPos = "low";
+    else if (last >= bb.upper) bbPos = "high";
+    else if (last < bb.mid)    bbPos = "midlow";
+    else                       bbPos = "midhigh";
+  }
+
+  // Score: positive = long, negative = short
+  let score = 0;
+  const evidence = [];
+  if (rsi != null) {
+    if (rsi < 30)       { score += 2; evidence.push(["+2", `RSI ${rsi.toFixed(1)} — oversold (long bias)`]); }
+    else if (rsi < 45)  { score += 1; evidence.push(["+1", `RSI ${rsi.toFixed(1)} — weak, room to recover`]); }
+    else if (rsi > 70)  { score -= 2; evidence.push(["-2", `RSI ${rsi.toFixed(1)} — overbought (short bias)`]); }
+    else if (rsi > 55)  { score -= 1; evidence.push(["-1", `RSI ${rsi.toFixed(1)} — strong, pullback risk`]); }
+    else                {            evidence.push([" 0", `RSI ${rsi.toFixed(1)} — neutral zone`]); }
+  }
+  if (bb) {
+    if (bbPos === "low")        { score += 1; evidence.push(["+1", `Price at lower Bollinger band ($${fmtPriceNum(bb.lower)})`]); }
+    else if (bbPos === "high")  { score -= 1; evidence.push(["-1", `Price at upper Bollinger band ($${fmtPriceNum(bb.upper)})`]); }
+  }
+  if (trend === "up")        { score += 1; evidence.push(["+1", `SMA20 above SMA50 — uptrend`]); }
+  else if (trend === "down") { score -= 1; evidence.push(["-1", `SMA20 below SMA50 — downtrend`]); }
+  else                       {            evidence.push([" 0", `SMA20 ≈ SMA50 — no trend`]); }
+
+  const ch7 = row.price_change_percentage_7d_in_currency;
+  if (ch7 != null && rsi != null) {
+    if (ch7 < -10 && rsi < 40) { score += 1; evidence.push(["+1", `Sharp 7d drop (${ch7.toFixed(1)}%) into oversold — dip setup`]); }
+    if (ch7 > 15  && rsi > 60) { score -= 1; evidence.push(["-1", `Sharp 7d rally (+${ch7.toFixed(1)}%) into overbought — fade setup`]); }
+  }
+
+  if (atrPct != null) {
+    evidence.push([" ·", `ATR(14) ≈ ${atrPct.toFixed(1)}% — typical daily range for sizing`]);
+  }
+
+  const verdict =
+      score >= 3 ? "strong-buy"
+    : score >= 1 ? "buy"
+    : score <= -3 ? "strong-sell"
+    : score <= -1 ? "sell"
+    : "neutral";
+
+  // Indicative swing levels: lower BB = long entry zone, upper BB = short entry zone.
+  const swing = bb ? { longEntry: bb.lower, shortEntry: bb.upper, mid: bb.mid } : null;
+
+  return { rsi, sma20, sma50, bb, bbPos, trend, atrPct, score, verdict, evidence, swing };
+}
+
+function sma(arr, n) {
+  if (arr.length < n) return null;
+  let s = 0; for (let i = arr.length - n; i < arr.length; i++) s += arr[i];
+  return s / n;
+}
+function rsi14(closes) {
+  if (closes.length < 15) return null;
+  let gain = 0, loss = 0;
+  for (let i = 1; i <= 14; i++) {
+    const d = closes[i] - closes[i - 1];
+    if (d >= 0) gain += d; else loss -= d;
+  }
+  let avgG = gain / 14, avgL = loss / 14;
+  for (let i = 15; i < closes.length; i++) {
+    const d = closes[i] - closes[i - 1];
+    const g = d > 0 ? d : 0;
+    const l = d < 0 ? -d : 0;
+    avgG = (avgG * 13 + g) / 14;
+    avgL = (avgL * 13 + l) / 14;
+  }
+  if (avgL === 0) return 100;
+  const rs = avgG / avgL;
+  return 100 - 100 / (1 + rs);
+}
+function bollinger(closes, n, k) {
+  if (closes.length < n) return null;
+  const slice = closes.slice(-n);
+  const mid = slice.reduce((a, b) => a + b, 0) / n;
+  const variance = slice.reduce((a, b) => a + (b - mid) ** 2, 0) / n;
+  const sd = Math.sqrt(variance);
+  return { mid, upper: mid + k * sd, lower: mid - k * sd, sd };
+}
+function atr14Pct(closes) {
+  // Approximation from closes only: |Δclose| as range proxy.
+  if (closes.length < 15) return null;
+  let s = 0;
+  for (let i = closes.length - 14; i < closes.length; i++) {
+    s += Math.abs(closes[i] - closes[i - 1]);
+  }
+  const atr = s / 14;
+  return (atr / closes[closes.length - 1]) * 100;
+}
+
+// ─── Render ────────────────────────────────────────────────────────────────
+function buildHeads() {
+  const mk = id => {
+    const tr = document.getElementById(id);
+    tr.innerHTML = "";
+    for (const c of COLUMNS) {
+      const th = document.createElement("th");
+      th.textContent = c.label;
+      if (c.align === "left") th.classList.add("coin");
+      if (c.hideSm) th.classList.add("hide-sm");
+      th.dataset.col = c.id;
+      th.addEventListener("click", () => {
+        if (sort.col === c.id) sort.dir = sort.dir === "asc" ? "desc" : "asc";
+        else { sort.col = c.id; sort.dir = "asc"; }
+        render();
+      });
+      tr.appendChild(th);
+    }
+    // Trailing column for remove button on watchlist
+    if (id === "wlHead") {
+      const th = document.createElement("th"); th.textContent = ""; tr.appendChild(th);
+    }
+  };
+  mk("topHead"); mk("wlHead");
+}
+
+function render() {
+  // Mark sort indicators
+  for (const th of document.querySelectorAll("th")) {
+    th.classList.remove("sort-asc", "sort-desc");
+    if (th.dataset.col === sort.col) th.classList.add(sort.dir === "asc" ? "sort-asc" : "sort-desc");
+  }
+  document.getElementById("wlCount").textContent = watchlist.length;
+  renderTable("topBody", sortRows(filterRows(topRows)), false);
+  renderTable("wlBody",  sortRows(filterRows(watchRows)), true);
+}
+
+function filterRows(rows) {
+  if (filter === "all") return rows;
+  return rows.filter(r => {
+    const v = r.ta?.verdict;
+    if (!v) return filter === "neutral";
+    if (filter === "long")    return v === "buy" || v === "strong-buy";
+    if (filter === "short")   return v === "sell" || v === "strong-sell";
+    if (filter === "neutral") return v === "neutral";
+    return true;
+  });
+}
+
+function sortRows(rows) {
+  const col = COLUMNS.find(c => c.id === sort.col);
+  if (!col) return rows;
+  const dir = sort.dir === "asc" ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    let av = col.get(a), bv = col.get(b);
+    if (sort.col === "verdict") { av = verdictRank(av); bv = verdictRank(bv); }
+    if (typeof av === "string" && typeof bv === "string") return av.localeCompare(bv) * dir;
+    if (av == null) return 1; if (bv == null) return -1;
+    return (av - bv) * dir;
+  });
+}
+
+function verdictRank(v) {
+  return { "strong-buy": 2, "buy": 1, "neutral": 0, "sell": -1, "strong-sell": -2 }[v] ?? 0;
+}
+
+function renderTable(tbodyId, rows, isWatchlist) {
+  const tbody = document.getElementById(tbodyId);
+  tbody.innerHTML = "";
+  if (!rows.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td class="empty" colspan="20">${
+      isWatchlist ? "Add coins above to track them here." : "No coins match this filter."
+    }</td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+  for (const row of rows) {
+    const tr = document.createElement("tr");
+    tr.className = "row";
+    tr.addEventListener("click", () => {
+      if (expanded.has(row.id)) expanded.delete(row.id); else expanded.add(row.id);
+      render();
+    });
+    for (const c of COLUMNS) {
+      const td = document.createElement("td");
+      if (c.hideSm) td.classList.add("hide-sm");
+      const raw = c.get(row);
+      if (c.id === "name") {
+        td.className = "coin";
+        td.innerHTML = `<img src="${row.image}" alt="" loading="lazy"/>
+          <span><b>${escapeHtml(row.name)}</b> <span class="sym">${escapeHtml(row.symbol)}</span></span>`;
+      } else if (c.fmt) {
+        td.innerHTML = c.fmt(raw, row);
+      } else {
+        td.textContent = raw ?? "";
+      }
+      if (c.color && typeof raw === "number") td.classList.add(raw >= 0 ? "pos" : "neg");
+      tr.appendChild(td);
+    }
+    if (isWatchlist) {
+      const td = document.createElement("td"); td.className = "remove";
+      td.innerHTML = `<button title="Remove">×</button>`;
+      td.querySelector("button").addEventListener("click", (e) => {
+        e.stopPropagation();
+        removeFromWatchlist(row.id);
+      });
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+
+    if (expanded.has(row.id)) tbody.appendChild(renderWhy(row, isWatchlist));
+  }
+}
+
+function renderWhy(row, isWatchlist) {
+  const tr = document.createElement("tr"); tr.className = "why-row";
+  const td = document.createElement("td"); td.colSpan = COLUMNS.length + (isWatchlist ? 1 : 0);
+  const ta = row.ta;
+  if (!ta) { td.textContent = "Computing indicators…"; tr.appendChild(td); return tr; }
+  const swing = ta.swing ? `
+    <div>
+      <b>Indicative swing levels</b>
+      <ul>
+        <li><b>Long entry zone:</b> ≤ $${fmtPriceNum(ta.swing.longEntry)} (lower Bollinger)</li>
+        <li><b>Mean reversion target:</b> $${fmtPriceNum(ta.swing.mid)} (20-day mid)</li>
+        <li><b>Short entry zone:</b> ≥ $${fmtPriceNum(ta.swing.shortEntry)} (upper Bollinger)</li>
+      </ul>
+    </div>` : "";
+  td.innerHTML = `
+    <div class="why-grid">
+      <div>
+        <b>Why ${verdictLabel(ta.verdict)} · score ${ta.score >= 0 ? "+" : ""}${ta.score}</b>
+        <ul>${ta.evidence.map(([w, t]) => `<li><b>${w}</b> &nbsp; ${escapeHtml(t)}</li>`).join("")}</ul>
+      </div>
+      ${swing}
+    </div>`;
+  tr.appendChild(td);
+  return tr;
+}
+
+// ─── Formatters ────────────────────────────────────────────────────────────
+function fmtPrice(v)  { return v == null ? "" : "$" + fmtPriceNum(v); }
+function fmtPriceNum(v) {
+  if (v >= 1000)  return v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  if (v >= 1)     return v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  if (v >= 0.01)  return v.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  return v.toLocaleString(undefined, { maximumFractionDigits: 8 });
+}
+function fmtPct(v)  { return v == null ? "" : (v >= 0 ? "+" : "") + v.toFixed(2) + "%"; }
+function fmtPct1(v) { return v == null ? "" : v.toFixed(1) + "%"; }
+function fmtRsi(v)  {
+  if (v == null) return "<span style='color:var(--fg-dim)'>…</span>";
+  const cls = v < 30 ? "pos" : v > 70 ? "neg" : "";
+  return `<span class="${cls}">${v.toFixed(0)}</span>`;
+}
+function fmtTrend(v) {
+  if (!v) return "";
+  return v === "up" ? `<span class="pos">↑ up</span>`
+       : v === "down" ? `<span class="neg">↓ down</span>`
+       : `<span style="color:var(--fg-dim)">→ flat</span>`;
+}
+function fmtBb(v) {
+  if (!v) return "";
+  const map = { low: ["pos", "LOW"], midlow: ["", "mid-lo"], midhigh: ["", "mid-hi"], high: ["neg", "HIGH"], mid: ["", "mid"] };
+  const [cls, lbl] = map[v] ?? ["", v];
+  return `<span class="${cls}">${lbl}</span>`;
+}
+function fmtVerdict(v) {
+  if (!v) return `<span class="verdict v-neutral">…</span>`;
+  return `<span class="verdict v-${v}">${verdictLabel(v)}</span>`;
+}
+function verdictLabel(v) {
+  return { "strong-buy": "STRONG BUY", "buy": "BUY", "neutral": "NEUTRAL",
+           "sell": "SELL", "strong-sell": "STRONG SELL" }[v] ?? v;
+}
+function fmtSpark(prices) {
+  if (!prices || prices.length < 2) return "";
+  const w = 80, h = 24, n = prices.length;
+  const min = Math.min(...prices), max = Math.max(...prices);
+  const range = max - min || 1;
+  const pts = prices.map((p, i) =>
+    `${(i / (n - 1) * w).toFixed(1)},${(h - (p - min) / range * h).toFixed(1)}`).join(" ");
+  const up = prices[n - 1] >= prices[0];
+  const color = up ? "var(--green)" : "var(--red)";
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}"><polyline fill="none" stroke="${color}" stroke-width="1.5" points="${pts}"/></svg>`;
+}
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c =>
+    ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+
+// ─── Watchlist ─────────────────────────────────────────────────────────────
+function loadWatchlist() {
+  try { return JSON.parse(localStorage.getItem(WL_KEY) || "[]"); }
+  catch { return []; }
+}
+function saveWatchlist() {
+  localStorage.setItem(WL_KEY, JSON.stringify(watchlist));
+}
+async function addFromInput() {
+  const raw = document.getElementById("addInput").value.trim();
+  if (!raw) return;
+  setStatus(`Looking up “${raw}”…`);
+  try {
+    const hit = await searchCoin(raw);
+    if (!hit) { toast(`No coin found for “${raw}”`); setStatus(""); return; }
+    if (watchlist.includes(hit.id)) { toast(`${hit.name} already in watchlist`); return; }
+    watchlist.push(hit.id);
+    saveWatchlist();
+    document.getElementById("addInput").value = "";
+    toast(`Added ${hit.name}`);
+    await refreshAll();
+  } catch (e) {
+    toast("Lookup failed: " + e.message);
+    setStatus("");
+  }
+}
+function removeFromWatchlist(id) {
+  watchlist = watchlist.filter(x => x !== id);
+  saveWatchlist();
+  watchRows = watchRows.filter(r => r.id !== id);
+  render();
+}
+
+// ─── Controls ──────────────────────────────────────────────────────────────
+function wireControls() {
+  for (const p of document.querySelectorAll(".pill[data-filter]")) {
+    p.addEventListener("click", () => {
+      document.querySelectorAll(".pill[data-filter]").forEach(x => x.classList.remove("active"));
+      p.classList.add("active");
+      filter = p.dataset.filter;
+      render();
+    });
+  }
+  document.getElementById("addBtn").addEventListener("click", addFromInput);
+  document.getElementById("addInput").addEventListener("keydown", e => {
+    if (e.key === "Enter") addFromInput();
+  });
+  document.getElementById("refreshBtn").addEventListener("click", refreshAll);
+  document.getElementById("autoBtn").addEventListener("click", () => {
+    auto = !auto;
+    document.getElementById("autoBtn").textContent = "Auto: " + (auto ? "ON" : "OFF");
+    if (auto) startAuto(); else stopAuto();
+  });
+}
+function startAuto() {
+  stopAuto();
+  autoTimer = setInterval(refreshAll, REFRESH_MS);
+}
+function stopAuto() {
+  if (autoTimer) clearInterval(autoTimer);
+  autoTimer = null;
+}
+
+// ─── Misc ──────────────────────────────────────────────────────────────────
+function setStatus(s) { document.getElementById("status").textContent = s; }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove("show"), 2500);
+}
+
+</script>
+</body>
+</html>

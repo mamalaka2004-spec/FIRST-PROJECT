@@ -1,0 +1,15 @@
+# Vendored MCP server (clone of upstream — install via scripts/install-tradingview-mcp.sh)
+tradingview-mcp-jackson/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
