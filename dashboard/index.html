@@ -186,6 +186,7 @@ let sort = { col: "rank", dir: "asc" };
 let auto = true;
 let autoTimer = null;
 let expanded = new Set();
+let lastError = null;
 
 // ─── Boot ──────────────────────────────────────────────────────────────────
 buildHeads();
@@ -203,14 +204,25 @@ async function refreshAll() {
     ]);
     topRows = top;
     watchRows = wl;
+    lastError = null;
+    render();
     // Hydrate TA for everything currently in view (sequential to respect rate limit).
     await hydrateTA([...topRows, ...watchRows.filter(r => !topRows.find(t => t.id === r.id))]);
     render();
     setStatus(`Updated ${new Date().toLocaleTimeString()} · top ${topRows.length} + ${watchRows.length} watchlist`);
   } catch (e) {
     console.error(e);
-    setStatus("Error: " + e.message);
+    lastError = e.message;
+    setStatus("⚠︎ " + errorHint(e.message));
+    render();
   }
+}
+
+function errorHint(msg) {
+  if (/429/.test(msg))  return `Rate-limited by CoinGecko (${msg}). Waiting a minute usually clears it — auto-refresh will retry.`;
+  if (/403/.test(msg))  return `CoinGecko blocked this network (${msg}). This happens on some VPNs / cloud IPs. Try a residential connection or a CoinGecko Pro key.`;
+  if (/Failed to fetch/i.test(msg)) return `Network / CORS error. If you opened the file via file://, try serving it: python3 -m http.server -d dashboard 8080`;
+  return msg;
 }
 
 async function fetchMarkets(extra) {
@@ -231,7 +243,7 @@ async function fetchChart(id) {
     vs_currency: "usd", days: "90", interval: "daily",
   });
   const r = await fetch(`${CG}/coins/${encodeURIComponent(id)}/market_chart?${params}`);
-  if (!r.ok) throw new Error(`chart ${id} ${r.status}`);
+  if (!r.ok) { const err = new Error(`chart ${id} ${r.status}`); err.status = r.status; throw err; }
   return r.json();
 }
 
@@ -243,23 +255,34 @@ async function searchCoin(query) {
 }
 
 const taCache = new Map(); // id -> ta object (in-memory only)
+let hydrateDelayMs = 1200;  // adaptive; increases on 429s
 
 async function hydrateTA(rows) {
-  for (const row of rows) {
-    if (row.ta) continue;
-    if (taCache.has(row.id)) { row.ta = taCache.get(row.id); continue; }
+  const pending = rows.filter(r => !r.ta);
+  let done = 0;
+  for (const row of pending) {
+    if (taCache.has(row.id)) { row.ta = taCache.get(row.id); done++; continue; }
+    setStatus(`Computing indicators… ${done}/${pending.length}`);
     try {
       const chart = await fetchChart(row.id);
       const closes = chart.prices.map(p => p[1]);
       const ta = computeTA(closes, row);
       taCache.set(row.id, ta);
       row.ta = ta;
-      render(); // progressive render as each row is ready
+      hydrateDelayMs = Math.max(1000, hydrateDelayMs - 100); // ease back down on success
+      render();
     } catch (e) {
       console.warn("TA failed for", row.id, e.message);
-      row.ta = { verdict: "neutral", evidence: [`No history available (${e.message})`], score: 0 };
+      if (e.status === 429) {
+        hydrateDelayMs = Math.min(8000, hydrateDelayMs * 2); // exponential back-off
+        setStatus(`Rate-limited, backing off to ${hydrateDelayMs}ms…`);
+        await sleep(hydrateDelayMs);
+        continue; // retry this row on next loop iteration would need re-queue; leave for next refresh
+      }
+      row.ta = { verdict: "neutral", evidence: [[" ·", `No history: ${e.message}`]], score: 0, failed: true };
     }
-    await sleep(900); // throttle for CoinGecko free tier
+    done++;
+    await sleep(hydrateDelayMs);
   }
 }
 
@@ -411,7 +434,7 @@ function filterRows(rows) {
   if (filter === "all") return rows;
   return rows.filter(r => {
     const v = r.ta?.verdict;
-    if (!v) return filter === "neutral";
+    if (!v) return false; // hide unhydrated rows in every non-"all" filter
     if (filter === "long")    return v === "buy" || v === "strong-buy";
     if (filter === "short")   return v === "sell" || v === "strong-sell";
     if (filter === "neutral") return v === "neutral";
@@ -441,9 +464,11 @@ function renderTable(tbodyId, rows, isWatchlist) {
   tbody.innerHTML = "";
   if (!rows.length) {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td class="empty" colspan="20">${
-      isWatchlist ? "Add coins above to track them here." : "No coins match this filter."
-    }</td>`;
+    let msg;
+    if (isWatchlist) msg = "Add coins above to track them here.";
+    else if (lastError) msg = `<b>Couldn't load market data.</b><br/><span style="color:var(--fg-dim)">${escapeHtml(errorHint(lastError))}</span><br/><br/><span class="pill" onclick="location.reload()">↻ Reload</span>`;
+    else msg = "No coins match this filter.";
+    tr.innerHTML = `<td class="empty" colspan="20">${msg}</td>`;
     tbody.appendChild(tr);
     return;
   }
